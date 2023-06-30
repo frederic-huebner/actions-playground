@@ -1,0 +1,28 @@
+name: Comment PR
+
+on:
+  workflow_run:
+    workflows:
+      - Push Workflow Trigger
+    types:
+      - completed
+
+jobs:
+  comment-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run:
+          apt-get install jq
+      - name: Debug
+        env:
+          WORKFLOW: "${{ github.event.workflow_run.head_sha }}"
+        run: |
+          echo $WORKFLOW
+          echo ${{ github.event.workflow_run }} | jq
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            This is a test!
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
