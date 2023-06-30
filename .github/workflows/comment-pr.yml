@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Debug
         env:
-          WORKFLOW: "Test"
+          WORKFLOW: "${{ github.event.workflow_run.head_sha }}"
         run: |
           echo $WORKFLOW
       - name: Comment PR
