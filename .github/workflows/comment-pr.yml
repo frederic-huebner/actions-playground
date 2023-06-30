@@ -11,6 +11,9 @@ jobs:
   comment-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Install jq
+        run:
+          apt-get install jq
       - name: Debug
         env:
           WORKFLOW: "${{ github.event.workflow_run.head_sha }}"
