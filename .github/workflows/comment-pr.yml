@@ -11,9 +11,6 @@ jobs:
   comment-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Install jq
-        run:
-          sudo apt-get install -y jq
       - name: Debug
         run: |
           echo ${{ toJson(github.event.workflow_run) }}
