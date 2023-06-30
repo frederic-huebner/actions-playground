@@ -16,7 +16,7 @@ jobs:
           WORKFLOW: "${{ github.event.workflow_run.head_sha }}"
         run: |
           echo $WORKFLOW
-          echo ${{ github.event.workflow_run }}
+          echo ${{ github.event.workflow_run }} | jq
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v2
         with:
