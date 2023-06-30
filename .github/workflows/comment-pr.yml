@@ -11,18 +11,13 @@ jobs:
   comment-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Install jq
-        run:
-          sudo apt-get install -y jq
       - name: Debug
-        env:
-          WORKFLOW: "${{ github.event.workflow_run.head_sha }}"
         run: |
-          echo $WORKFLOW
-          echo ${{ github.event.workflow_run }} | jq '.'
+          echo ${{ toJson(github.event.workflow_run) }}
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
             This is a test!
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.workflow_run.pull_requests[0].number }}
