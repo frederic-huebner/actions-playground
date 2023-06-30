@@ -9,20 +9,30 @@ on:
 
 jobs:
   comment-pr:
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Install jq
-        run:
-          sudo apt-get install -y jq
       - name: Debug
-        env:
-          WORKFLOW: "${{ github.event.workflow_run.head_sha }}"
         run: |
-          echo $WORKFLOW
-          echo ${{ github.event.workflow_run }} | jq '.'
+          echo "${{ toJson(github.event.workflow_run) }}"
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
             This is a test!
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ github.event.workflow_run.pull_requests[0].number }}
+
+      - name: Comment CVEs on PR
+        if: ${{ failure() }}
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: 'Thank you for the PR!'
+            });
