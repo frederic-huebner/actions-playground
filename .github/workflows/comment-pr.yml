@@ -11,8 +11,28 @@ jobs:
   trivy-vulnerability-check:
     permissions:
       pull-requests: write
+      statuses: write
+
     runs-on: ubuntu-latest
     steps:
+      - name: Initiate check
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        env:
+          SHA: "${{ github.event.workflow_run.head_sha }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.SHA,
+              state: 'pending',
+              target_url: `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              description: "Scanning for CVEs ...",
+              context: "trivy-vulnerability-check"
+            });
+        continue-on-error: true
+
       - name: Checkout code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
 
@@ -39,17 +59,9 @@ jobs:
           exit-code: '1'
           output: 'cve-result.json'
 
-      - name: Print outcome
-        if: always()
-        run: |
-          echo "${{ steps.cve_check.outcome }}"
-          echo "Is outcome failure?: ${{ steps.cve_check.outcome == 'failure' }}"
-          echo "${{ toJSON(github.event.workflow_run.pull_requests) }}"
-          echo "Is Pull Request?: ${{ toJSON(github.event.workflow_run.pull_requests) != '[]' }}"
-
       - name: Comment CVEs on PR
         if: failure() && (toJSON(github.event.workflow_run.pull_requests) != '[]')
-        uses: actions/github-script@v6 # v6.4.1
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
         env:
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
         with:
