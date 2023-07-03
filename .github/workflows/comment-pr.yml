@@ -35,6 +35,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2 # v3.11.0
@@ -58,6 +60,42 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
           output: 'cve-result.json'
+
+      - name: Successful check
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        if: success()
+        env:
+          SHA: "${{ github.event.workflow_run.head_sha }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.SHA,
+              state: 'success',
+              target_url: `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              description: "No CVEs found.",
+              context: "trivy-vulnerability-check"
+            });
+
+      - name: Failed check
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+        if: failure()
+        env:
+          SHA: "${{ github.event.workflow_run.head_sha }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: process.env.SHA,
+              state: 'failure',
+              target_url: `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              description: "CVEs found!",
+              context: "trivy-vulnerability-check"
+            });
 
       - name: Comment CVEs on PR
         if: failure() && (toJSON(github.event.workflow_run.pull_requests) != '[]')
