@@ -33,11 +33,11 @@ jobs:
           scan-type: 'fs'
           scanners: 'vuln'
           ignore-unfixed: true
-          format: 'table'
+          format: 'json'
           scan-ref: '.'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
-          output: 'cve-result'
+          output: 'cve-result.json'
 
       - name: Print outcome
         if: always()
@@ -55,17 +55,34 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const cveResult = fs.readFileSync('./cve-result');
-
-            let body = `### Vulnerability Scan failed! ❌
-                        <details><summary>More details ...</summary>
-                        ${cveResult}
-                        </details>`;
-
+            const fs = require("fs");
+            const cveResult = JSON.parse(fs.readFileSync("./cve-result.json"));
+            
+            let output = ``;
+            
+            cveResult.Results.filter(
+              (result) => result.Vulnerabilities !== undefined
+            ).forEach((result) => {
+              output += `#### ${result.Target}\n`;
+              output += "| ID | Package | Version | Severity |\n";
+              output += "| --- | --- | --- | --- |\n";
+            
+              result.Vulnerabilities.forEach((vuln) => {
+                output += `| ${vuln.VulnerabilityID} | ${vuln.PkgName} | ${vuln.InstalledVersion} | ${vuln.Severity} |\n`;
+              });
+              output += "\n";
+            });
+            
+            const body = `### Vulnerability Scan failed! ❌
+            <details>
+                <summary>More details ...</summary>
+                ${output}
+            </details;
+            
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: process.env.PR_NUMBER,
               body: body
             });
+          
