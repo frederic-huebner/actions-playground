@@ -1,0 +1,13 @@
+name: Node
+
+on:
+  workflow_dispatch:
+
+jobs:
+  try-node-commands:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          node -e '
+          console.log("Hello, World!");'
