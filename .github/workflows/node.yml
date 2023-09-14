@@ -10,4 +10,5 @@ jobs:
     steps:
       - run: |
           node -e '
-          console.log("Hello, World!");'
+        
+          '
